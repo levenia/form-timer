@@ -1,0 +1,198 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Левеня | Завдання Всеукраїнського Фізичного Конкурсу "Левеня"</title>
+</head>
+<body>
+	<script type="text/javascript">
+		var timeoutMessage = 'Ваш час вичерпано!';
+		var visibilityFailMessage = 'Ваші відповіді анульовано!';
+		var timeWarningMessage = 'У Вас залишилося мало часу. Якщо Ви не надішлете форму вчасно, ваші відповіді буде втрачено!';
+		var visibilityWarningMessage = 'Будь ласка залишайтеся на цій сторінці впродовж виконання завдань. Після ще одного переходу ваші відповіді буде втрачено!';
+	
+		var totalTime = 30;//2*60*60;
+		var warningTime = 15;//5*60;
+		var alertDuration = 10;
+		var dangerTime = 5;//30;
+		
+		var needSubmitInfo = true;
+		var startTime = null;
+		var interval = null;
+		var banner = null;
+		var alertBox = null;
+		var timeWarningShown = false;
+		var visibilityWarningShown = false;
+		
+		function start() {
+			if (needSubmitInfo) {
+				needSubmitInfo = false;
+				return;
+			}
+			if (startTime) {
+				finishSuccess();
+				return;
+			}
+			
+			startTime = Date.now();
+			banner = document.getElementById('banner');
+			alertBox = document.getElementById('alert');
+			
+			updateTimer();
+			document.body.className = 'started';
+			interval = setInterval(updateTimer, 1000);
+			
+			registerVisibilityListener();
+		}
+		
+		function updateTimer() {
+			var timeSpent = ~~((Date.now() - startTime) / 1000);
+			var timeLeft = totalTime - timeSpent;
+			
+			if (timeLeft < 0) {
+				finishFail(timeoutMessage);
+				return;
+			}
+			
+			banner.innerText = formatTime(timeLeft);
+			
+			if (timeLeft < dangerTime) {
+				banner.className = 'danger';
+			} else if (timeLeft < warningTime) {
+				banner.className = 'warning';
+				if (!timeWarningShown) {
+					showAlert(timeWarningMessage);
+					timeWarningShown = true;
+				}
+			}
+		}
+		
+		function registerVisibilityListener() {
+			document.addEventListener('visibilitychange', function() {
+				if (document.visibilityState == 'visible') {
+					if (!visibilityWarningShown) {
+						showAlert(visibilityWarningMessage);
+						visibilityWarningShown = true;
+					} else {
+						finishFail(visibilityFailMessage);
+					}
+				}
+			});
+		}
+		
+		function showAlert(text) {
+			alertBox.innerText = text;
+			alertBox.className = 'show';
+			setTimeout(closeAlert, alertDuration * 1000);
+		}
+		
+		function closeAlert() {
+			alertBox.className = '';
+		}
+		
+		function finishFail(text) {
+			document.body.className = 'finished';
+			clearInterval(interval);
+			closeAlert();
+			banner.innerText = text;
+			setTimeout(function() {
+				var form = document.getElementById('form');
+				document.body.removeChild(form);
+			}, 1000);
+		}
+		
+		function finishSuccess() {
+			startTime = null;
+			document.body.className = '';
+			clearInterval(interval);
+			closeAlert();
+		}
+		
+		function formatTime(time) {
+			var s = time % 60;
+			time = ~~(time / 60);
+			var m = time % 60;
+			time = ~~(time / 60);
+			var h = time % 60;
+			
+			return num2(h) + ':' + num2(m) + ':' + num2(s);
+		}
+		
+		function num2(value) {
+			return value.toString().padStart(2, 0);
+		}
+	</script>
+	<style type="text/css">
+		html, body, #form {
+			margin: 0px;
+			padding: 0px;
+			border: 0px;
+			width: 100%;
+			height: 100%;
+			font-family: arial;
+		}
+		#form {
+			transition: height .5s;
+		}
+		#banner {
+			margin: 0px;
+			padding: 0px;
+			margin-top: -50px;
+			color: #ffffff;
+			background-color: #4caf50;
+			width: 100%;
+			line-height: 50px;
+			font-size: 30px;
+			text-align: center;
+			transition: margin-top .5s, background-color .5s, line-height .5s;
+		}
+		#banner.warning {
+			background-color: #f44336;
+		}
+		#banner.danger {
+			animation: alert 1s infinite;
+		}
+		.started #form {
+			height: calc(100% - 50px);
+		}
+		.started #banner {
+			margin-top: 0px;
+		}
+		.finished #form {
+			height: 0%;
+		}
+		.finished #banner {
+			margin-top: 0px;
+			background-color: #3f51b5 !important;
+			line-height: 100vh;
+		}
+		#alert {
+			position: fixed;
+			top: 75px;
+			width: 310px;
+			left: 50%;
+			margin-left: -155px;
+			text-align: center;
+			font-size: 14pt;
+			line-height: 1.1em;
+			color: #ffffff;
+			background-color: #f44336;
+			padding: 15px;
+			box-shadow: 1px 1px 10px #888888;
+			opacity: 0;
+			transition: opacity .5s;
+		}
+		#alert.show {
+			opacity: 1;
+		}
+		
+		@keyframes alert {
+			from { background-color: #ff9800; }
+			to { background-color: #f44336; }
+		}
+	</style>
+	<div id="alert"></div>
+	<div id="banner">00:00:00</div>
+	<iframe id="form" src="https://docs.google.com/forms/d/e/1FAIpQLSdQhzMhFpzq_SYM6hGBqZu1H5aGYeaHApPCNE2TCBZxNXbsZQ/viewform" onload="start()"/>
+</body>
+</html>
